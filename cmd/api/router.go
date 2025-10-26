@@ -1,4 +1,4 @@
-package routes
+package api
 
 import (
 	"authentication/controllers"
@@ -8,27 +8,25 @@ import (
 	"encoding/base64"
 	"net/http"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
-func RegisterHTTPRoutes(router *mux.Router) {
+func RegisterHTTPRoutes(router *http.ServeMux) {
 	// Health Check
 	router.HandleFunc("/api/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"message":"pong"}`))
-	}).Methods("GET")
+	})
 
 	// Signup & Login
-	router.HandleFunc("/api/signup", controllers.Signup).Methods("POST")
-	router.HandleFunc("/api/login", controllers.Login).Methods("POST")
+	router.HandleFunc("/api/signup", controllers.Signup)
+	router.HandleFunc("/api/login", controllers.Login)
 	// Logout route (protected, user must be logged in)
-	router.Handle("/api/logout", helpers.AuthMiddleware(http.HandlerFunc(controllers.Logout))).Methods("POST")
+	router.Handle("/api/logout", helpers.AuthMiddleware(http.HandlerFunc(controllers.Logout)))
 
 	// Users routes
-	router.Handle("/api/users", helpers.AuthMiddleware(http.HandlerFunc(controllers.GetUsers), "ADMIN", "SUPER_ADMIN")).Methods("GET")
-	router.Handle("/api/users/{id}", helpers.AuthMiddleware(http.HandlerFunc(controllers.GetUser), "ADMIN", "SUPER_ADMIN")).Methods("GET")
+	router.Handle("/api/users", helpers.AuthMiddleware(http.HandlerFunc(controllers.GetUsers), "ADMIN", "SUPER_ADMIN"))
+	router.Handle("/api/users/{id}", helpers.AuthMiddleware(http.HandlerFunc(controllers.GetUser), "ADMIN", "SUPER_ADMIN"))
 
 	// Google OAuth login
 	router.HandleFunc("/api/oauth/google/login", func(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +43,7 @@ func RegisterHTTPRoutes(router *mux.Router) {
 
 		url := services.GetGoogleLoginURL(state)
 		http.Redirect(w, r, url, http.StatusFound)
-	}).Methods("GET")
+	})
 
 	// Google OAuth callback
 	router.HandleFunc("/api/oauth/google/callback", func(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +74,7 @@ func RegisterHTTPRoutes(router *mux.Router) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"id":"` + user.ID.String() + `","email":"` + user.Email + `","token":"` + token + `"}`))
-	}).Methods("GET")
+	})
 }
 
 func generateState() string {

@@ -1,9 +1,8 @@
-package config
+package configs
 
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -11,17 +10,13 @@ import (
 
 var DB *sqlx.DB
 
-func ConnectPostgres() {
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_NAME")
-	sslmode := os.Getenv("DB_SSLMODE")
-
-	if host == "" || port == "" || user == "" || password == "" || dbname == "" {
-		log.Fatal("Database environment variables are missing")
-	}
+func ConnectDB() {
+	host := GetEnv("DB_HOST")
+	port := GetEnv("DB_PORT")
+	user := GetEnv("DB_USER")
+	password := GetEnv("DB_PASSWORD")
+	dbname := GetEnv("DB_NAME")
+	sslmode := GetEnv("DB_SSLMODE")
 
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
@@ -31,13 +26,7 @@ func ConnectPostgres() {
 	var err error
 	DB, err = sqlx.Connect("postgres", dsn)
 	if err != nil {
-		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+		log.Fatal("Failed to connect database:", err)
 	}
-
-	// Ping to verify live connection
-	if err := DB.Ping(); err != nil {
-		log.Fatalf("Failed to ping DB: %v", err)
-	}
-
-	log.Println("Connected to PostgreSQL successfully")
+	log.Println("Database connected")
 }
