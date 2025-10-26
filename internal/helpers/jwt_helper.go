@@ -2,14 +2,13 @@ package helpers
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Secret key for signing JWT (must be loaded from env)
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+// Secret key for signing JWT (replace with env variable in production)
+var jwtSecret = []byte("YOUR_SECRET_KEY") // <--- define it here
 
 type Claims struct {
 	UserID string `json:"user_id"`
@@ -19,14 +18,6 @@ type Claims struct {
 
 // ValidateToken validates a JWT and returns claims
 func ValidateToken(tokenString string) (*Claims, error) {
-	// Re-load secret for safety if it wasn't loaded on startup (or use an init func)
-	if len(jwtSecret) == 0 {
-		jwtSecret = []byte(os.Getenv("JWT_SECRET"))
-	}
-	if len(jwtSecret) == 0 {
-		return nil, errors.New("JWT_SECRET not configured")
-	}
-
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil
 	})
@@ -44,14 +35,6 @@ func ValidateToken(tokenString string) (*Claims, error) {
 
 // GenerateToken creates a JWT token
 func GenerateToken(userID, role string) (string, error) {
-	// Re-load secret for safety
-	if len(jwtSecret) == 0 {
-		jwtSecret = []byte(os.Getenv("JWT_SECRET"))
-	}
-	if len(jwtSecret) == 0 {
-		return "", errors.New("JWT_SECRET not configured")
-	}
-
 	claims := &Claims{
 		UserID: userID,
 		Role:   role,

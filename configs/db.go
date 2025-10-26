@@ -1,4 +1,4 @@
-package configs
+package config
 
 import (
 	"fmt"
@@ -9,11 +9,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// DB is the exported global database connection pool
 var DB *sqlx.DB
 
 func ConnectPostgres() {
-	// These env variables must be set in your .env file or environment
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	user := os.Getenv("DB_USER")

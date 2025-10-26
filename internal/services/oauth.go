@@ -1,9 +1,9 @@
 package services
 
 import (
-	"api/configs"
-	"api/internal/helpers"
-	"api/internal/models"
+	"authentication/config"
+	"authentication/helpers"
+	models "authentication/user"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,7 +22,6 @@ func InitGoogleOAuthFromEnv() error {
 	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
 	redirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
 	if redirectURL == "" {
-		// Use a better default for development
 		redirectURL = "http://localhost:8080/api/oauth/google/callback"
 	}
 
@@ -67,27 +66,21 @@ func HandleGoogleCallback(code string) (*models.User, string, error) {
 	}
 
 	var user models.User
-	// Assuming DB is exported from the config package (config.DB)
-	err = configs.DB.Get(&user, "SELECT * FROM users WHERE email=$1", googleUser.Email)
+	err = config.DB.Get(&user, "SELECT * FROM users WHERE email=$1", googleUser.Email)
 	if err != nil {
 		// Create new user
 		user = models.User{
-			ID:    uuid.New(),
-			Name:  googleUser.Name,
-			Email: googleUser.Email,
-			// Since no password is provided for OAuth, we'll assign a placeholder,
-			// though the DB schema requires a password TEXT NOT NULL.
-			// A better practice is to allow NULL for password in DB or use a unique placeholder.
-			Password:           helpers.HashPassword(uuid.NewString()),
+			ID:                 uuid.New(),
+			Name:               googleUser.Name,
+			Email:              googleUser.Email,
 			Role:               "CUSTOMER",
 			Status:             "ACTIVE",
 			SubscriptionStatus: "SUBSCRIBED",
 			CreatedAt:          time.Now(),
 			UpdatedAt:          time.Now(),
 		}
-		// NOTE: The password field must be included in the insert even if it's a placeholder.
-		_, err := configs.DB.NamedExec(`INSERT INTO users (id, name, email, password, role, status, subscription_status, created_at, updated_at)
-			VALUES (:id, :name, :email, :password, :role, :status, :subscription_status, :created_at, :updated_at)`, &user)
+		_, err := config.DB.NamedExec(`INSERT INTO users (id, name, email, role, status, subscription_status, created_at, updated_at)
+			VALUES (:id, :name, :email, :role, :status, :subscription_status, :created_at, :updated_at)`, &user)
 		if err != nil {
 			return nil, "", fmt.Errorf("failed to create user: %v", err)
 		}

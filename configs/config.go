@@ -1,9 +1,9 @@
-package router
+package routes
 
 import (
-	"api/internal/handlers"
-	"api/internal/helpers"
-	"api/internal/services"
+	"authentication/controllers"
+	"authentication/helpers"
+	"authentication/services"
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
@@ -21,16 +21,14 @@ func RegisterHTTPRoutes(router *mux.Router) {
 	}).Methods("GET")
 
 	// Signup & Login
-	router.HandleFunc("/api/signup", handlers.Signup).Methods("POST")
-	router.HandleFunc("/api/login", handlers.Login).Methods("POST")
-
+	router.HandleFunc("/api/signup", controllers.Signup).Methods("POST")
+	router.HandleFunc("/api/login", controllers.Login).Methods("POST")
 	// Logout route (protected, user must be logged in)
-	router.Handle("/api/logout", helpers.AuthMiddleware(http.HandlerFunc(handlers.Logout))).Methods("POST")
+	router.Handle("/api/logout", helpers.AuthMiddleware(http.HandlerFunc(controllers.Logout))).Methods("POST")
 
-	// Users routes (Protected by AuthMiddleware)
-	// NOTE: You don't have GetUsers/GetUser handlers, but I'll keep the routes for structure
-	router.Handle("/api/users", helpers.AuthMiddleware(http.HandlerFunc(placeholderHandler), "ADMIN", "SUPER_ADMIN")).Methods("GET")
-	router.Handle("/api/users/{id}", helpers.AuthMiddleware(http.HandlerFunc(placeholderHandler), "ADMIN", "SUPER_ADMIN")).Methods("GET")
+	// Users routes
+	router.Handle("/api/users", helpers.AuthMiddleware(http.HandlerFunc(controllers.GetUsers), "ADMIN", "SUPER_ADMIN")).Methods("GET")
+	router.Handle("/api/users/{id}", helpers.AuthMiddleware(http.HandlerFunc(controllers.GetUser), "ADMIN", "SUPER_ADMIN")).Methods("GET")
 
 	// Google OAuth login
 	router.HandleFunc("/api/oauth/google/login", func(w http.ResponseWriter, r *http.Request) {
@@ -75,17 +73,10 @@ func RegisterHTTPRoutes(router *mux.Router) {
 			return
 		}
 
-		// Send JSON response
-		helpers.JSON(w, map[string]string{
-			"id":    user.ID.String(),
-			"email": user.Email,
-			"token": token,
-		}, http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"id":"` + user.ID.String() + `","email":"` + user.Email + `","token":"` + token + `"}`))
 	}).Methods("GET")
-}
-
-func placeholderHandler(w http.ResponseWriter, r *http.Request) {
-	helpers.JSON(w, map[string]string{"message": "Placeholder handler, implement me!"}, http.StatusOK)
 }
 
 func generateState() string {
